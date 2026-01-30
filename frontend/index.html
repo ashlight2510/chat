@@ -9,6 +9,9 @@
       content="익명으로 무작위 상대와 1:1 채팅. 가볍게 대화해보세요."
     />
     <link rel="canonical" href="https://chat.funnyfunny.cloud/" />
+    <link rel="alternate" hreflang="ko" href="https://chat.funnyfunny.cloud/" />
+    <link rel="alternate" hreflang="en" href="https://chat.funnyfunny.cloud/en.html" />
+    <link rel="alternate" hreflang="x-default" href="https://chat.funnyfunny.cloud/" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://chat.funnyfunny.cloud/" />
     <meta property="og:title" content="랜덤 채팅" />
@@ -351,38 +354,55 @@
       .footer-link:hover {
         text-decoration: underline;
       }
+      .lang-switch {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        z-index: 100;
+        padding: 8px 14px;
+        border-radius: 8px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        color: var(--accent);
+        font-size: 0.85rem;
+        text-decoration: none;
+      }
+      .lang-switch:hover {
+        background: rgba(139, 92, 246, 0.15);
+      }
     </style>
   </head>
-  <body>
+  <body data-lang="ko">
+    <a href="./en.html" class="lang-switch" id="langSwitch">🇺🇸 English</a>
     <div class="wrap">
       <header>
         <div class="logo">💬</div>
-        <h1>랜덤 채팅</h1>
-        <p class="tagline">익명으로 무작위 상대와 1:1 대화</p>
+        <h1 data-i18n="title">랜덤 채팅</h1>
+        <p class="tagline" data-i18n="tagline">익명으로 무작위 상대와 1:1 대화</p>
       </header>
 
-      <p class="kindness">
+      <p class="kindness" data-i18n="kindness" data-i18n-html="true">
         ✨ 상처 주는 말보다 긍정적이고 착한 대화를 나누면,<br />
         본인에게도 복이 돌아온답니다.
       </p>
 
       <div id="startCard" class="start-card">
-        <p>
+        <p data-i18n="startDesc" data-i18n-html="true">
           누군가와 대화하고 싶을 때,<br />버튼을 누르면 랜덤으로 매칭됩니다.
         </p>
-        <button type="button" id="matchBtn" class="btn-match">
+        <button type="button" id="matchBtn" class="btn-match" data-i18n="matchBtn">
           🎲 매칭 하기
         </button>
       </div>
 
       <div id="status" class="status" style="display: none"></div>
       <div id="chatHeader" class="chat-header" style="display: none">
-        <span class="chat-header-text">대화 중</span>
+        <span class="chat-header-text" data-i18n="chatting">대화 중</span>
         <button
           type="button"
           id="reportBtn"
           class="btn-report"
-          title="부적절한 대화 신고"
+          data-i18n="reportBtn"
         >
           ⚠️ 신고하기
         </button>
@@ -392,13 +412,14 @@
         <input
           type="text"
           id="input"
-          placeholder="메시지 입력"
+          placeholder=""
+          data-i18n-placeholder="placeholderMsg"
           maxlength="500"
           autocomplete="off"
         />
-        <button type="button" id="sendBtn">전송</button>
+        <button type="button" id="sendBtn" data-i18n="send">전송</button>
       </div>
-      <button type="button" id="nextBtn" class="btn-next" style="display: none">
+      <button type="button" id="nextBtn" class="btn-next" style="display: none" data-i18n="nextBtn">
         다른 상대 찾기
       </button>
 
@@ -410,12 +431,84 @@
         target="_blank"
         rel="noopener"
         class="footer-link"
+        data-i18n="footerLink"
         >✨ 다른 서비스 보기</a
       >
     </footer>
 
     <script src="config.js"></script>
     <script>
+      const LANG = document.body.getAttribute("data-lang") || "ko";
+      const STR = {
+        ko: {
+          title: "랜덤 채팅",
+          tagline: "익명으로 무작위 상대와 1:1 대화",
+          kindness: "✨ 상처 주는 말보다 긍정적이고 착한 대화를 나누면,<br />본인에게도 복이 돌아온답니다.",
+          startDesc: "누군가와 대화하고 싶을 때,<br />버튼을 누르면 랜덤으로 매칭됩니다.",
+          matchBtn: "🎲 매칭 하기",
+          chatting: "대화 중",
+          reportBtn: "⚠️ 신고하기",
+          reported: "신고됨",
+          placeholderMsg: "메시지 입력",
+          send: "전송",
+          nextBtn: "다른 상대 찾기",
+          footerLink: "✨ 다른 서비스 보기",
+          matching: "매칭 중... ",
+          sec: "초",
+          matched: "상대와 연결됐어요",
+          partnerLeft: "상대가 나갔어요",
+          disconnected: "연결 끊김. (코드: ",
+          disconnectedEnd: ") 새로고침 또는 매칭 하기를 눌러주세요.",
+          connectFail: "연결 실패: ",
+          connectError: "연결 오류. 디버그 로그를 확인해주세요.",
+        },
+        en: {
+          title: "Random Chat",
+          tagline: "1:1 anonymous chat with random strangers",
+          kindness: "✨ Kind words come back to you.<br />Positive conversations bring blessings.",
+          startDesc: "When you want to chat,<br />click to get randomly matched.",
+          matchBtn: "🎲 Start Matching",
+          chatting: "In chat",
+          reportBtn: "⚠️ Report",
+          reported: "Reported",
+          placeholderMsg: "Type a message",
+          send: "Send",
+          nextBtn: "Find another",
+          footerLink: "✨ Other services",
+          matching: "Matching... ",
+          sec: "s",
+          matched: "Connected!",
+          partnerLeft: "Partner left",
+          disconnected: "Disconnected (code: ",
+          disconnectedEnd: "). Refresh or click Start Matching.",
+          connectFail: "Connection failed: ",
+          connectError: "Connection error. Check console.",
+        },
+      };
+      function t(key) {
+        return (STR[LANG] || STR.ko)[key] ?? (STR.ko[key] ?? key);
+      }
+      function initI18n() {
+        document.querySelectorAll("[data-i18n]").forEach((el) => {
+          const key = el.getAttribute("data-i18n");
+          const val = t(key);
+          if (el.hasAttribute("data-i18n-html")) {
+            el.innerHTML = val;
+          } else {
+            el.textContent = val;
+          }
+        });
+        document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+          el.placeholder = t(el.getAttribute("data-i18n-placeholder"));
+        });
+        const langSwitch = document.getElementById("langSwitch");
+        if (langSwitch) {
+          langSwitch.textContent = LANG === "ko" ? "🇺🇸 English" : "🇰🇷 한국어";
+          langSwitch.href = LANG === "ko" ? "./en.html" : "./";
+        }
+      }
+      document.addEventListener("DOMContentLoaded", initI18n);
+
       (function () {
         const statusEl = document.getElementById("status");
         const startCard = document.getElementById("startCard");
@@ -463,7 +556,7 @@
           waitStartTime = Date.now();
           if (waitInterval) clearInterval(waitInterval);
           statusEl.innerHTML =
-            '<span class="spinner"></span><span class="status-text">매칭 중... <span id="waitSec">0</span>초</span>';
+            '<span class="spinner"></span><span class="status-text">' + t("matching") + '<span id="waitSec">0</span>' + t("sec") + "</span>";
           statusEl.className = "status waiting";
           statusEl.style.display = "block";
           const secEl = document.getElementById("waitSec");
@@ -488,8 +581,9 @@
           if (messageHistory.length > 30) messageHistory.shift();
           const div = document.createElement("div");
           div.className = "msg " + (isSelf ? "self" : "other");
+          const locale = LANG === "en" ? "en-US" : "ko-KR";
           const time = ts
-            ? new Date(ts).toLocaleTimeString("ko-KR", {
+            ? new Date(ts).toLocaleTimeString(locale, {
                 hour: "2-digit",
                 minute: "2-digit",
               })
@@ -518,6 +612,7 @@
           inputRow.style.display = "none";
           messageHistory = [];
           reportBtn.classList.remove("reported");
+          reportBtn.textContent = t("reportBtn");
 
           const url =
             typeof getWsUrl === "function"
@@ -529,7 +624,7 @@
             ws = new WebSocket(url);
           } catch (e) {
             log("WebSocket constructor error: " + e.message, "err");
-            setStatus("연결 실패: " + e.message, "disconnected");
+            setStatus(t("connectFail") + e.message, "disconnected");
             startCard.style.display = "block";
             matchBtn.disabled = false;
             return;
@@ -554,7 +649,7 @@
                 matched = true;
                 messageHistory = [];
                 log("Matched with partner", "ok");
-                setStatus("상대와 연결됐어요", "matched");
+                setStatus(t("matched"), "matched");
                 chatHeader.style.display = "flex";
                 inputRow.style.display = "flex";
                 input.focus();
@@ -562,7 +657,7 @@
                 addMsg(msg.text || "", false, msg.ts);
               } else if (msg.type === "partner_left") {
                 log("Partner left", "warn");
-                setStatus("상대가 나갔어요", "disconnected");
+                setStatus(t("partnerLeft"), "disconnected");
                 chatHeader.style.display = "none";
                 inputRow.style.display = "none";
                 nextBtn.style.display = "block";
@@ -585,12 +680,7 @@
               e.wasClean ? "info" : "err",
             );
             if (!intentionalReconnect) {
-              setStatus(
-                "연결 끊김. (코드: " +
-                  e.code +
-                  ") 새로고침 또는 매칭 하기를 눌러주세요.",
-                "disconnected",
-              );
+              setStatus(t("disconnected") + e.code + t("disconnectedEnd"), "disconnected");
               chatHeader.style.display = "none";
               inputRow.style.display = "none";
               nextBtn.style.display = "block";
@@ -601,7 +691,7 @@
 
           ws.onerror = (e) => {
             log("WebSocket ERROR", "err");
-            setStatus("연결 오류. 디버그 로그를 확인해주세요.", "disconnected");
+            setStatus(t("connectError"), "disconnected");
           };
         }
 
@@ -657,7 +747,7 @@
             }),
           );
         reportBtn.classList.add("reported");
-        reportBtn.textContent = "신고됨";
+        reportBtn.textContent = t("reported");
         log("Report sent", "ok");
       });
 
