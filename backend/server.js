@@ -65,6 +65,16 @@ wss.on('connection', (ws, req) => {
             ts: Date.now()
           }));
         }
+      } else if (msg.type === 'report') {
+        const partner = getOpponent(ws);
+        const report = {
+          at: new Date().toISOString(),
+          reporter: ws.id,
+          reported: partner ? partner.id : null,
+          reason: msg.reason || '부적절한 대화',
+          recentMessages: msg.recentMessages || []
+        };
+        console.log('[REPORT]', JSON.stringify(report, null, 2));
       }
     } catch (_) {}
   });
