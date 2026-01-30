@@ -171,8 +171,8 @@
       ws.close();
       ws = null;
     }
-    intentionalReconnect = false;
     connect();
+    setTimeout(() => { intentionalReconnect = false; }, 500);
   });
 
   connect();
