@@ -13,8 +13,8 @@
 2. Repo 연결 후 Root Directory: `chat/backend`
 3. Build: `npm install`
 4. Start: `npm start`
-5. 배포 URL 예: `https://chat-jz6r.onrender.com`
-6. WebSocket: `wss://chat-jz6r.onrender.com/ws`
+5. 배포 URL 예: `https://chat-em45.onrender.com`
+6. WebSocket: `wss://chat-em45.onrender.com/ws`
 
 ## 프론트엔드
 
