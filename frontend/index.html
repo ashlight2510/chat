@@ -146,7 +146,7 @@
       }
 
       .status {
-        padding: 14px 18px;
+        padding: 18px 24px;
         border-radius: 14px;
         background: var(--bg-card);
         border: 1px solid var(--border);
@@ -156,6 +156,34 @@
       }
       .status.waiting {
         color: var(--warn);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        min-height: 56px;
+      }
+      .status.waiting .status-text {
+        line-height: 1.5;
+      }
+      .spinner {
+        display: inline-block;
+        vertical-align: -11px;
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+        margin-right: 10px;
+        border: 3px solid rgba(148, 163, 184, 0.3);
+        border-top-color: #94a3b8;
+        border-radius: 50%;
+        animation: spin 1.2s linear infinite;
+      }
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
       }
       .status.matched {
         color: var(--success);
@@ -418,13 +446,39 @@
           return d.innerHTML;
         }
 
+        let waitStartTime = 0;
+        let waitInterval = null;
+
         function setStatus(text, klass) {
-          statusEl.textContent = text;
+          if (waitInterval) {
+            clearInterval(waitInterval);
+            waitInterval = null;
+          }
+          statusEl.innerHTML = escapeHtml(text);
           statusEl.className = "status " + (klass || "");
           statusEl.style.display = "block";
         }
 
+        function setStatusWaiting() {
+          waitStartTime = Date.now();
+          if (waitInterval) clearInterval(waitInterval);
+          statusEl.innerHTML =
+            '<span class="spinner"></span><span class="status-text">매칭 중... <span id="waitSec">0</span>초</span>';
+          statusEl.className = "status waiting";
+          statusEl.style.display = "block";
+          const secEl = document.getElementById("waitSec");
+          function update() {
+            if (secEl) secEl.textContent = Math.floor((Date.now() - waitStartTime) / 1000);
+          }
+          update();
+          waitInterval = setInterval(update, 1000);
+        }
+
         function hideStatus() {
+          if (waitInterval) {
+            clearInterval(waitInterval);
+            waitInterval = null;
+          }
           statusEl.style.display = "none";
         }
 
@@ -455,7 +509,9 @@
           matched = false;
           startCard.style.display = "none";
           nextBtn.style.display = "none";
-          setStatus("매칭 중...", "waiting");
+          setStatusWaiting();
+          statusEl.className = "status waiting";
+          statusEl.style.display = "block";
           chatArea.style.display = "none";
           chatArea.innerHTML = "";
           chatHeader.style.display = "none";
@@ -481,7 +537,9 @@
 
           ws.onopen = () => {
             log("WebSocket OPEN (readyState=" + ws.readyState + ")", "ok");
-            setStatus("매칭 중...", "waiting");
+            setStatusWaiting();
+            statusEl.className = "status waiting";
+            statusEl.style.display = "block";
           };
 
           ws.onmessage = (e) => {
@@ -489,7 +547,9 @@
               log("RECV: " + e.data, "info");
               const msg = JSON.parse(e.data);
               if (msg.type === "waiting") {
-                setStatus("매칭 중...", "waiting");
+                setStatusWaiting();
+                statusEl.className = "status waiting";
+                statusEl.style.display = "block";
               } else if (msg.type === "matched") {
                 matched = true;
                 messageHistory = [];
