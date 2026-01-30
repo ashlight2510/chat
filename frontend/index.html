@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>랜덤 채팅 | chat.funnyfunny.cloud</title>
+  <meta name="description" content="익명으로 무작위 상대와 1:1 채팅. 가볍게 대화해보세요." />
+  <link rel="canonical" href="https://chat.funnyfunny.cloud/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://chat.funnyfunny.cloud/" />
+  <meta property="og:title" content="랜덤 채팅" />
+  <meta property="og:description" content="익명으로 무작위 상대와 1:1 채팅" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231e293b'/><path d='M30 45 L45 45 L55 55 L70 55' stroke='%2394a3b8' stroke-width='4' fill='none' stroke-linecap='round'/></svg>" />
+  <style>
+    :root { --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; --muted: #94a3b8; --accent: #38bdf8; }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Noto Sans KR", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    .wrap { max-width: 480px; margin: 0 auto; padding: 24px 20px 100px; }
+    header { text-align: center; margin-bottom: 24px; }
+    h1 { margin: 0 0 8px; font-size: 1.5rem; }
+    .tagline { margin: 0; font-size: 0.9rem; color: var(--muted); }
+    .status { padding: 12px 16px; border-radius: 12px; background: var(--card); margin-bottom: 16px; font-size: 0.9rem; text-align: center; }
+    .status.waiting { color: #fbbf24; }
+    .status.matched { color: #34d399; }
+    .status.disconnected { color: #f87171; }
+    .chat-area { min-height: 280px; max-height: 50vh; overflow-y: auto; padding: 16px; background: var(--card); border-radius: 16px; margin-bottom: 16px; }
+    .msg { margin-bottom: 12px; max-width: 85%; }
+    .msg.self { margin-left: auto; text-align: right; }
+    .msg .bubble { display: inline-block; padding: 10px 14px; border-radius: 16px; font-size: 0.95rem; line-height: 1.4; }
+    .msg.self .bubble { background: var(--accent); color: #0f172a; }
+    .msg.other .bubble { background: #334155; color: var(--text); }
+    .msg .ts { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+    .input-row { display: flex; gap: 10px; }
+    .input-row input { flex: 1; padding: 14px 18px; border: none; border-radius: 12px; background: var(--card); color: var(--text); font-size: 1rem; }
+    .input-row input::placeholder { color: var(--muted); }
+    .input-row input:focus { outline: 2px solid var(--accent); }
+    .input-row button { padding: 14px 20px; border: none; border-radius: 12px; background: var(--accent); color: #0f172a; font-weight: 700; cursor: pointer; font-size: 1rem; }
+    .input-row button:hover { opacity: 0.9; }
+    .input-row button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-next { width: 100%; padding: 14px; margin-top: 16px; border: none; border-radius: 12px; background: #334155; color: var(--text); font-weight: 600; cursor: pointer; }
+    .btn-next:hover { background: #475569; }
+    footer { text-align: center; padding: 24px; }
+    .footer-link { color: var(--accent); text-decoration: none; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>💬 랜덤 채팅</h1>
+      <p class="tagline">익명으로 무작위 상대와 1:1 대화</p>
+    </header>
+
+    <div id="status" class="status waiting">매칭 중...</div>
+
+    <div id="chatArea" class="chat-area" style="display:none;"></div>
+
+    <div id="inputRow" class="input-row" style="display:none;">
+      <input type="text" id="input" placeholder="메시지 입력" maxlength="500" autocomplete="off" />
+      <button type="button" id="sendBtn">전송</button>
+    </div>
+
+    <button type="button" id="nextBtn" class="btn-next" style="display:none;">다른 상대 찾기</button>
+  </div>
+
+  <footer>
+    <a href="https://funnyfunny.cloud" target="_blank" rel="noopener" class="footer-link">✨ 다른 서비스 보기</a>
+  </footer>
+
+  <script src="config.js"></script>
+  <script>
+(function () {
+  const statusEl = document.getElementById('status');
+  const chatArea = document.getElementById('chatArea');
+  const inputRow = document.getElementById('inputRow');
+  const input = document.getElementById('input');
+  const sendBtn = document.getElementById('sendBtn');
+  const nextBtn = document.getElementById('nextBtn');
+
+  let ws = null;
+  let matched = false;
+  let intentionalReconnect = false;
+
+  function setStatus(text, klass) {
+    statusEl.textContent = text;
+    statusEl.className = 'status ' + (klass || '');
+  }
+
+  function addMsg(text, isSelf, ts) {
+    chatArea.style.display = 'block';
+    const div = document.createElement('div');
+    div.className = 'msg ' + (isSelf ? 'self' : 'other');
+    const time = ts ? new Date(ts).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '';
+    div.innerHTML = '<div class="bubble">' + escapeHtml(text) + '</div><div class="ts">' + time + '</div>';
+    chatArea.appendChild(div);
+    chatArea.scrollTop = chatArea.scrollHeight;
+  }
+
+  function escapeHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function connect() {
+    if (ws && ws.readyState === 1) return;
+    matched = false;
+    setStatus('매칭 중...', 'waiting');
+    chatArea.style.display = 'none';
+    chatArea.innerHTML = '';
+    inputRow.style.display = 'none';
+    nextBtn.style.display = 'none';
+
+    const url = typeof getWsUrl === 'function' ? getWsUrl() : 'wss://chat-jz6r.onrender.com/ws';
+    ws = new WebSocket(url);
+
+    ws.onopen = () => {
+      setStatus('매칭 중...', 'waiting');
+    };
+
+    ws.onmessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data);
+        if (msg.type === 'waiting') {
+          setStatus('매칭 중...', 'waiting');
+        } else if (msg.type === 'matched') {
+          matched = true;
+          setStatus('상대와 연결됐어요', 'matched');
+          inputRow.style.display = 'flex';
+          input.focus();
+        } else if (msg.type === 'chat') {
+          addMsg(msg.text || '', false, msg.ts);
+        } else if (msg.type === 'partner_left') {
+          setStatus('상대가 나갔어요', 'disconnected');
+          inputRow.style.display = 'none';
+          nextBtn.style.display = 'block';
+        }
+      } catch (_) {}
+    };
+
+    ws.onclose = () => {
+      if (!intentionalReconnect) {
+        setStatus('연결 끊김. 새로고침해주세요.', 'disconnected');
+        inputRow.style.display = 'none';
+        nextBtn.style.display = 'block';
+      }
+    };
+
+    ws.onerror = () => {
+      setStatus('연결 오류. 잠시 후 다시 시도해주세요.', 'disconnected');
+    };
+  }
+
+  function send() {
+    const text = (input.value || '').trim();
+    if (!text || !ws || ws.readyState !== 1 || !matched) return;
+    ws.send(JSON.stringify({ type: 'chat', text: text }));
+    addMsg(text, true, Date.now());
+    input.value = '';
+  }
+
+  sendBtn.addEventListener('click', send);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      send();
+    }
+  });
+  nextBtn.addEventListener('click', () => {
+    intentionalReconnect = true;
+    if (ws) {
+      ws.close();
+      ws = null;
+    }
+    intentionalReconnect = false;
+    connect();
+  });
+
+  connect();
+})();
+  </script>
+</body>
+</html>
